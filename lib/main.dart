@@ -30,7 +30,7 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  final TextEditingController _controller = TextEditingController(); // 空内容
+  final TextEditingController _controller = TextEditingController();
 
   final GlobalKey _previewKey = GlobalKey();
   final GlobalKey _tempTableKey = GlobalKey();
@@ -225,9 +225,9 @@ $htmlContent
 ''';
   }
 
-  // ==================== 复制到 Word（修复版） ====================
+  // ==================== 导出 Word ====================
 
-  Future<void> _copyAsRichText() async {
+  Future<void> _exportToWord() async {
     var markdown = _controller.text;
     if (markdown.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -240,42 +240,16 @@ $htmlContent
     markdown = _fixMarkdownTable(markdown);
     final htmlContent = _markdownToHtml(markdown);
 
-    // 方法：使用 execCommand 复制富文本
-    try {
-      final div = html.DivElement()
-        ..setAttribute('contenteditable', 'true')
-        ..style.opacity = '0'
-        ..style.position = 'absolute'
-        ..style.left = '-9999px'
-        ..style.top = '-9999px'
-        ..innerHtml = htmlContent;
-      html.document.body!.append(div);
+    final blob = html.Blob([htmlContent], 'application/msword');
+    final url = html.Url.createObjectUrlFromBlob(blob);
+    final anchor = html.AnchorElement(href: url)
+      ..setAttribute('download', 'document.doc')
+      ..click();
+    html.Url.revokeObjectUrl(url);
 
-      div.focus();
-      final selection = html.window.getSelection();
-      if (selection != null) {
-        selection.selectAllChildren(div);
-        final success = html.document.execCommand('copy');
-        div.remove();
-
-        if (success && mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-                content: Text("已复制！粘贴到 Word 即可（如显示代码，用「选择性粘贴-HTML格式」）")),
-          );
-          return;
-        }
-      }
-      div.remove();
-    } catch (e) {
-      debugPrint("富文本复制失败: $e");
-    }
-
-    // 备用方案
-    await Clipboard.setData(ClipboardData(text: htmlContent));
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("已复制！如果格式不对，请选中右侧预览区手动复制")),
+        const SnackBar(content: Text("Word 文档已下载！")),
       );
     }
   }
@@ -452,7 +426,7 @@ $htmlContent
         padding: const EdgeInsets.all(12.0),
         child: Column(
           children: [
-            // 输入框（hintText 示例文字，输入时自动消失）
+            // 输入框
             Expanded(
               flex: 1,
               child: TextField(
@@ -479,9 +453,9 @@ $htmlContent
                   label: const Text("刷新预览"),
                 ),
                 ElevatedButton.icon(
-                  onPressed: _copyAsRichText,
-                  icon: const Icon(Icons.content_copy),
-                  label: const Text("复制到 Word"),
+                  onPressed: _exportToWord,
+                  icon: const Icon(Icons.file_download),
+                  label: const Text("导出 Word"),
                 ),
                 ElevatedButton.icon(
                   onPressed: _extractAndCaptureTable,
@@ -495,6 +469,30 @@ $htmlContent
                   label: const Text("提取表格为图片"),
                 ),
               ],
+            ),
+            const SizedBox(height: 12),
+            // 建议提示框
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.blue.shade50,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.blue.shade200),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.lightbulb, size: 20, color: Colors.blue.shade700),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      "💡 推荐使用 Microsoft Word 打开导出的文件，格式显示最佳",
+                      style:
+                          TextStyle(fontSize: 12, color: Colors.blue.shade900),
+                    ),
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: 12),
             // 预览区
