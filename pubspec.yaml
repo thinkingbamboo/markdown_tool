@@ -1,0 +1,24 @@
+name: markdown_tool
+description: A Markdown rendering tool.
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_markdown: ^0.7.0
+  markdown: ^7.2.0
+  wid_mage: any
+  cupertino_icons: ^1.0.8
+  gal: ^2.3.2  # 新增：保存图片到相册
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true
